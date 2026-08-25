@@ -5,100 +5,73 @@ import dtk;
 
 void main(string[] args)
 {
-    writeln("--- Phase 2: Generic Widget Abstraction Test ---");
+    writeln("--- Phase 3: Concrete Widgets (Frame, Label, Button, Entry) Test ---");
 
     auto app = new TkApp();
     scope(exit) app.dispose();
 
     auto root = app.root();
-    root.title = "D + Tk Phase 2 - Widget Test";
+    root.title = "D + Tk Phase 3 - Widgets Test";
 
-    // 1. Test TkRoot as a Widget
-    assert(root.path == ".");
-    assert(root.parent is null);
-    assert(!root.isDestroyed);
-    writeln("[PASS] Root window is a valid Widget: path = ", root.path);
+    // 1. Create a Frame inside root
+    auto frame = root.frame(15);
+    assert(frame.path == ".frame1");
+    assert(frame.parent is root);
+    writeln("[PASS] Frame created with path: ", frame.path);
 
-    // 2. Test Widget path generation & creation
-    // A subclass of Widget or direct Widget instance
-    class CustomWidget : Widget
-    {
-        this(Widget parent, string cmdType, string text)
-        {
-            string childPath = parent.generateChildPath("w");
-            super(parent.interp, childPath, parent);
-            evalCmd(_interp, cmdType, _path, "-text", text);
-        }
-    }
+    // 2. Create a Label inside the Frame
+    auto label = frame.label("Initial Label Text");
+    assert(label.path == ".frame1.lbl2");
+    assert(label.parent is frame);
+    assert(label.text == "Initial Label Text");
+    
+    label.text = "Updated Label: Welcome to DTk!";
+    assert(label.text == "Updated Label: Welcome to DTk!");
+    writeln("[PASS] Label created and text property verified: '", label.text, "'");
 
-    auto btn1 = new CustomWidget(root, "button", "Button 1 (Normal)");
-    assert(btn1.path == ".w1");
-    assert(btn1.parent is root);
-    assert(!btn1.isDestroyed);
-    writeln("[PASS] Child widget created with hierarchical path: ", btn1.path);
+    // 3. Create a Button inside the Frame
+    auto button = frame.button("Click Me!");
+    assert(button.path == ".frame1.btn3");
+    assert(button.parent is frame);
+    assert(button.text == "Click Me!");
+    assert(button.enabled == true);
 
-    // 3. Test configure and cget with safe string handling (special characters that would break raw eval)
-    string specialText = "Text with special chars: { [ $var \" ' ] } \\";
-    btn1.configure("text", specialText);
-    string retrievedText = btn1.cget("text");
-    assert(retrievedText == specialText, "Config text mismatch: " ~ retrievedText);
-    writeln("[PASS] configure and cget round-trip with special characters: ", retrievedText);
+    button.text = "Save Changes";
+    assert(button.text == "Save Changes");
+    button.enabled = false;
+    assert(button.enabled == false);
+    button.enabled = true;
+    assert(button.enabled == true);
+    writeln("[PASS] Button created, text and enabled properties verified: '", button.text, "'");
 
-    // 4. Test Pack geometry manager
-    btn1.pack(PackOptions.init.setPadx(15).setPady(10).setFill("x").setExpand(true));
-    writeln("[PASS] Widget packed with PackOptions.");
-    btn1.packForget();
-    writeln("[PASS] Widget unpacked with packForget.");
+    // 4. Create an Entry inside the Frame
+    auto entry = frame.entry("Hello Tk Entry");
+    assert(entry.path == ".frame1.entry4");
+    assert(entry.parent is frame);
+    assert(entry.text == "Hello Tk Entry");
 
-    // 5. Test Grid geometry manager
-    auto btn2 = new CustomWidget(root, "button", "Button 2 (Grid)");
-    btn2.grid(0, 0);
-    writeln("[PASS] Widget placed in grid(0, 0).");
-    btn2.gridForget();
-    writeln("[PASS] Widget removed from grid with gridForget.");
+    entry.text = "New Entry Content";
+    assert(entry.text == "New Entry Content");
 
-    // 6. Test Place geometry manager
-    auto btn3 = new CustomWidget(root, "button", "Button 3 (Place)");
-    btn3.place(20, 20, 200, 35);
-    writeln("[PASS] Widget positioned with place(20, 20, 200, 35).");
+    entry.insert(4, "D ");
+    assert(entry.text == "New D Entry Content");
 
-    // 7. Test nested child hierarchy
-    class FrameWidget : Widget
-    {
-        this(Widget parent)
-        {
-            string childPath = parent.generateChildPath("frm");
-            super(parent.interp, childPath, parent);
-            evalCmd(_interp, "frame", _path);
-        }
-    }
+    entry.clear();
+    assert(entry.text == "");
+    entry.text = "Final Text";
 
-    auto frame = new FrameWidget(root);
-    auto nestedBtn = new CustomWidget(frame, "button", "Nested Button");
-    assert(frame.path == ".frm4");
-    assert(nestedBtn.path == ".frm4.w5");
-    assert(nestedBtn.parent is frame);
-    writeln("[PASS] Nested widget path hierarchy verified: ", nestedBtn.path);
+    entry.readOnly = true;
+    assert(entry.readOnly == true);
+    entry.readOnly = false;
+    assert(entry.readOnly == false);
+    writeln("[PASS] Entry created, text/insert/clear/readOnly verified: '", entry.text, "'");
 
-    // 8. Test Widget destruction
-    btn2.destroy();
-    assert(btn2.isDestroyed);
-    bool caughtDestroyError = false;
-    try
-    {
-        btn2.configure("text", "Should fail");
-    }
-    catch (TclException ex)
-    {
-        caughtDestroyError = true;
-        writeln("[PASS] Caught expected exception on destroyed widget: ", ex.msg);
-    }
-    assert(caughtDestroyError);
-
-    // Clean up temporary place button and pack the nested hierarchy for visual display
-    btn3.destroy();
-    frame.pack(PackOptions.init.setPadx(20).setPady(20));
-    nestedBtn.pack(PackOptions.init.setPadx(10).setPady(10));
+    // 5. Layout with Pack
+    frame.pack(PackOptions.init.setPadx(20).setPady(20).setFill("both").setExpand(true));
+    label.pack(PackOptions.init.setPady(5));
+    entry.pack(PackOptions.init.setPady(5).setFill("x"));
+    button.pack(PackOptions.init.setPady(10));
+    writeln("[PASS] All widgets laid out cleanly with Pack.");
 
     bool interactive = (args.length > 1 && args[1] == "--interactive");
     if (!interactive)
@@ -113,5 +86,5 @@ void main(string[] args)
 
     app.run();
     writeln("[PASS] Tk event loop exited cleanly.");
-    writeln("--- Phase 2 All Tests Passed Successfully ---");
+    writeln("--- Phase 3 All Tests Passed Successfully ---");
 }

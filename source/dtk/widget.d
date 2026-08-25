@@ -3,6 +3,10 @@ module dtk.widget;
 import tcl;
 import dtk.core;
 import dtk.geometry;
+import dtk.widgets.frame;
+import dtk.widgets.label;
+import dtk.widgets.button;
+import dtk.widgets.entry;
 import std.conv : to;
 
 /// Base class representing a Tk widget.
@@ -17,6 +21,7 @@ protected:
     Widget _parent;
     bool _isDestroyed = false;
 
+public:
     /// Generates a unique child Tcl widget path under this widget.
     string generateChildPath(string prefix = "w")
     {
@@ -27,7 +32,6 @@ protected:
             return _path ~ "." ~ prefix ~ id.to!string;
     }
 
-public:
     /// Constructor for root or wrapping an existing widget.
     this(Tcl_Interp* interp, string path, Widget parent = null)
     {
@@ -88,6 +92,28 @@ public:
 
         string optName = (option.length > 0 && option[0] == '-') ? option : "-" ~ option;
         return evalCmd(_interp, _path, "cget", optName);
+    }
+
+    // --- Widget Factory Methods ---
+
+    Frame frame(int padding = -1)
+    {
+        return new Frame(this, padding);
+    }
+
+    Label label(string text = "")
+    {
+        return new Label(this, text);
+    }
+
+    Button button(string text = "")
+    {
+        return new Button(this, text);
+    }
+
+    Entry entry(string initialText = "")
+    {
+        return new Entry(this, initialText);
     }
 
     // --- Geometry: pack ---
