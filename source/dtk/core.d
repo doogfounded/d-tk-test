@@ -37,3 +37,30 @@ void checkTcl(Tcl_Interp* interp, int code, string contextMsg = "")
             throw new TclException(err, code);
     }
 }
+
+/// Safely executes a Tcl command with string arguments using Tcl_Obj to prevent string injection.
+string evalCmd(Tcl_Interp* interp, in string[] args...)
+{
+    if (!interp)
+        throw new TclException("Invalid interpreter handle");
+
+    if (args.length == 0)
+        return "";
+
+    auto objs = new Tcl_Obj*[args.length];
+    for (size_t i = 0; i < args.length; ++i)
+    {
+        objs[i] = Tcl_NewStringObj(args[i].ptr, cast(int)args[i].length);
+        dtk_incr_ref_count(objs[i]);
+    }
+
+    scope(exit)
+    {
+        for (size_t i = 0; i < args.length; ++i)
+            dtk_decr_ref_count(objs[i]);
+    }
+
+    int code = Tcl_EvalObjv(interp, cast(int)objs.length, objs.ptr, TCL_EVAL_GLOBAL);
+    checkTcl(interp, code, "Command failed: " ~ args[0]);
+    return getTclResult(interp);
+}
