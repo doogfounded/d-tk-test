@@ -3,14 +3,15 @@ module dtk.root;
 import tcl;
 import dtk.core;
 import dtk.widget;
+import dtk.callback;
 
 /// Represents the Tk root window ('.').
 class TkRoot : Widget
 {
 public:
-    this(Tcl_Interp* interp)
+    this(Tcl_Interp* interp, CallbackRegistry registry = null)
     {
-        super(interp, ".", null);
+        super(interp, ".", null, registry);
     }
 
     /// Gets the window title via 'wm title .'.

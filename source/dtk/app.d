@@ -2,16 +2,18 @@ module dtk.app;
 
 import tcl;
 import dtk.core;
+import dtk.callback;
 import dtk.root;
 import std.string : toStringz;
 import std.process : environment;
 import std.file : exists;
 
-/// Manages the Tcl/Tk interpreter lifecycle and event loop.
+/// Manages the Tcl/Tk interpreter lifecycle, callback registry, and event loop.
 class TkApp
 {
 private:
     Tcl_Interp* _interp;
+    CallbackRegistry _registry;
     TkRoot _root;
     bool _isDisposed = false;
 
@@ -42,7 +44,17 @@ private:
         code = Tk_Init(_interp);
         checkTcl(_interp, code, "Tk_Init failed");
 
-        _root = new TkRoot(_interp);
+        // Initialize callback registry and register the 'd_callback' command in Tcl
+        _registry = new CallbackRegistry();
+        Tcl_CreateObjCommand(
+            _interp,
+            "d_callback".ptr,
+            &d_callback_dispatcher,
+            cast(ClientData)cast(void*)_registry,
+            null
+        );
+
+        _root = new TkRoot(_interp, _registry);
     }
 
 public:
@@ -56,13 +68,23 @@ public:
         dispose();
     }
 
-    /// Explicitly shuts down the interpreter and frees resources.
+    /// Explicitly shuts down the interpreter, clears callbacks, and frees resources.
     void dispose()
     {
-        if (!_isDisposed && _interp !is null)
+        if (!_isDisposed)
         {
-            Tcl_DeleteInterp(_interp);
-            _interp = null;
+            if (_registry !is null)
+            {
+                _registry.clear();
+                _registry = null;
+            }
+
+            if (_interp !is null)
+            {
+                Tcl_DeleteInterp(_interp);
+                _interp = null;
+            }
+
             _isDisposed = true;
         }
     }
@@ -71,6 +93,12 @@ public:
     @property Tcl_Interp* interp() pure nothrow @nogc @safe
     {
         return _interp;
+    }
+
+    /// Returns the callback registry.
+    @property CallbackRegistry registry() pure nothrow @nogc @safe
+    {
+        return _registry;
     }
 
     /// Returns the root window representation ('.').

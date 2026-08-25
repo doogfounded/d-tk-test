@@ -2,12 +2,15 @@ module dtk.widget;
 
 import tcl;
 import dtk.core;
+import dtk.callback;
 import dtk.geometry;
 import dtk.widgets.frame;
 import dtk.widgets.label;
 import dtk.widgets.button;
 import dtk.widgets.entry;
 import std.conv : to;
+import std.algorithm.mutation : remove;
+import std.algorithm.searching : countUntil;
 
 /// Base class representing a Tk widget.
 class Widget
@@ -19,6 +22,8 @@ protected:
     Tcl_Interp* _interp;
     string _path;
     Widget _parent;
+    CallbackRegistry _registry;
+    size_t[] _registeredCallbackIds;
     bool _isDestroyed = false;
 
 public:
@@ -33,11 +38,12 @@ public:
     }
 
     /// Constructor for root or wrapping an existing widget.
-    this(Tcl_Interp* interp, string path, Widget parent = null)
+    this(Tcl_Interp* interp, string path, Widget parent = null, CallbackRegistry registry = null)
     {
         this._interp = interp;
         this._path = path;
         this._parent = parent;
+        this._registry = (registry !is null) ? registry : (parent !is null ? parent.registry : null);
     }
 
     /// The full Tcl/Tk widget path (e.g., '.', '.w1', '.w1.b2').
@@ -58,18 +64,56 @@ public:
         return _interp;
     }
 
+    /// The callback registry associated with this widget's app.
+    @property CallbackRegistry registry() pure nothrow @nogc @safe
+    {
+        return _registry;
+    }
+
     /// Whether this widget has been destroyed.
     @property bool isDestroyed() const pure nothrow @nogc @safe
     {
         return _isDestroyed;
     }
 
-    /// Destroys this widget in Tk.
+    /// Registers a callback with this widget's lifecycle.
+    size_t registerCallback(void delegate() dg)
+    {
+        if (_registry is null || dg is null)
+            return 0;
+        size_t id = _registry.register(dg);
+        _registeredCallbackIds ~= id;
+        return id;
+    }
+
+    /// Unregisters a callback associated with this widget.
+    void unregisterCallback(size_t id)
+    {
+        if (_registry is null || id == 0)
+            return;
+        _registry.unregister(id);
+        ptrdiff_t idx = _registeredCallbackIds.countUntil(id);
+        if (idx >= 0)
+            _registeredCallbackIds = _registeredCallbackIds.remove(idx);
+    }
+
+    /// Destroys this widget in Tk and cleans up any registered callbacks.
     void destroy()
     {
-        if (!_isDestroyed && _interp !is null)
+        if (!_isDestroyed)
         {
-            evalCmd(_interp, "destroy", _path);
+            if (_registry !is null)
+            {
+                foreach (id; _registeredCallbackIds)
+                    _registry.unregister(id);
+                _registeredCallbackIds = null;
+            }
+
+            if (_interp !is null)
+            {
+                evalCmd(_interp, "destroy", _path);
+            }
+
             _isDestroyed = true;
         }
     }
