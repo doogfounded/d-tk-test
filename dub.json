@@ -1,0 +1,21 @@
+{
+	"name": "d-tk-test",
+	"authors": [
+		"Doug"
+	],
+	"description": "tk d app ",
+	"copyright": "Copyright © 2026, Doug",
+	"license": "proprietary",
+	"targetType": "executable",
+	"sourceFiles": [
+		"source/app.d",
+		"source/tcl.c"
+	],
+	"cImportPaths": [
+		"C:\\Users\\Doug\\AppData\\Local\\Apps\\Tcl86\\include"
+	],
+	"lflags": [
+		"C:\\Users\\Doug\\AppData\\Local\\Apps\\Tcl86\\lib\\tcl86t.lib",
+		"C:\\Users\\Doug\\AppData\\Local\\Apps\\Tcl86\\lib\\tk86t.lib"
+	]
+}
