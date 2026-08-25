@@ -82,4 +82,10 @@ public:
     {
         configure("state", val ? "normal" : "disabled");
     }
+
+    /// Convenience helper to bind Enter/Return key press in this entry.
+    void onReturn(void delegate() dg)
+    {
+        bind("<Return>", dg);
+    }
 }

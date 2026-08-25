@@ -46,7 +46,7 @@ public:
         this._registry = (registry !is null) ? registry : (parent !is null ? parent.registry : null);
     }
 
-    /// The full Tcl/Tk widget path (e.g., '.', '.w1', '.w1.b2').
+    /// The full Tcl/Tk widget path (e.g., '.', '.frame1', '.frame1.btn2').
     @property string path() const pure nothrow @nogc @safe
     {
         return _path;
@@ -95,6 +95,16 @@ public:
         ptrdiff_t idx = _registeredCallbackIds.countUntil(id);
         if (idx >= 0)
             _registeredCallbackIds = _registeredCallbackIds.remove(idx);
+    }
+
+    /// Binds an arbitrary Tk event sequence (e.g., "<Return>", "<Button-1>", "<FocusIn>") to a D delegate.
+    void bind(string eventSeq, void delegate() dg)
+    {
+        if (_isDestroyed)
+            throw new TclException("Cannot bind event on destroyed widget: " ~ _path);
+
+        size_t id = registerCallback(dg);
+        evalCmd(_interp, "bind", _path, eventSeq, "d_callback " ~ id.to!string);
     }
 
     /// Destroys this widget in Tk and cleans up any registered callbacks.
@@ -150,9 +160,12 @@ public:
         return new Label(this, text);
     }
 
-    Button button(string text = "")
+    Button button(string text = "", void delegate() onClickHandler = null)
     {
-        return new Button(this, text);
+        auto btn = new Button(this, text);
+        if (onClickHandler !is null)
+            btn.onClick = onClickHandler;
+        return btn;
     }
 
     Entry entry(string initialText = "")
@@ -160,9 +173,32 @@ public:
         return new Entry(this, initialText);
     }
 
-    // --- Geometry: pack ---
+    // --- Geometry: pack with named / default parameters ---
 
-    void pack(PackOptions options = PackOptions.init)
+    void pack(
+        int padx = -1,
+        int pady = -1,
+        string side = null,
+        string fill = null,
+        int expand = -1,
+        int ipadx = -1,
+        int ipady = -1,
+        string anchor = null
+    )
+    {
+        PackOptions opts;
+        opts.padx = padx;
+        opts.pady = pady;
+        opts.side = side;
+        opts.fill = fill;
+        opts.expand = expand;
+        opts.ipadx = ipadx;
+        opts.ipady = ipady;
+        opts.anchor = anchor;
+        pack(opts);
+    }
+
+    void pack(PackOptions options)
     {
         if (_isDestroyed)
             throw new TclException("Cannot pack a destroyed widget: " ~ _path);
@@ -172,11 +208,6 @@ public:
         evalCmd(_interp, cmd);
     }
 
-    void pack(int padx, int pady)
-    {
-        pack(PackOptions.init.setPadx(padx).setPady(pady));
-    }
-
     void packForget()
     {
         if (_isDestroyed)
@@ -184,9 +215,34 @@ public:
         evalCmd(_interp, "pack", "forget", _path);
     }
 
-    // --- Geometry: grid ---
+    // --- Geometry: grid with named / default parameters ---
 
-    void grid(GridOptions options = GridOptions.init)
+    void grid(
+        int row = -1,
+        int column = -1,
+        int rowspan = -1,
+        int columnspan = -1,
+        int padx = -1,
+        int pady = -1,
+        int ipadx = -1,
+        int ipady = -1,
+        string sticky = null
+    )
+    {
+        GridOptions opts;
+        opts.row = row;
+        opts.column = column;
+        opts.rowspan = rowspan;
+        opts.columnspan = columnspan;
+        opts.padx = padx;
+        opts.pady = pady;
+        opts.ipadx = ipadx;
+        opts.ipady = ipady;
+        opts.sticky = sticky;
+        grid(opts);
+    }
+
+    void grid(GridOptions options)
     {
         if (_isDestroyed)
             throw new TclException("Cannot grid a destroyed widget: " ~ _path);
@@ -196,11 +252,6 @@ public:
         evalCmd(_interp, cmd);
     }
 
-    void grid(int row, int column)
-    {
-        grid(GridOptions.init.setRow(row).setColumn(column));
-    }
-
     void gridForget()
     {
         if (_isDestroyed)
@@ -208,7 +259,24 @@ public:
         evalCmd(_interp, "grid", "forget", _path);
     }
 
-    // --- Geometry: place ---
+    // --- Geometry: place with named / default parameters ---
+
+    void place(
+        int x = int.min,
+        int y = int.min,
+        int width = int.min,
+        int height = int.min,
+        string anchor = null
+    )
+    {
+        PlaceOptions opts;
+        opts.x = x;
+        opts.y = y;
+        opts.width = width;
+        opts.height = height;
+        opts.anchor = anchor;
+        place(opts);
+    }
 
     void place(PlaceOptions options)
     {
@@ -218,14 +286,6 @@ public:
         string[] cmd = ["place", _path];
         cmd ~= options.toArgs();
         evalCmd(_interp, cmd);
-    }
-
-    void place(int x, int y, int width = int.min, int height = int.min)
-    {
-        auto opts = PlaceOptions.init.setX(x).setY(y);
-        if (width != int.min) opts.setWidth(width);
-        if (height != int.min) opts.setHeight(height);
-        place(opts);
     }
 
     void placeForget()
