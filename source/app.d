@@ -1,39 +1,64 @@
 module app;
 
-import tcl;
-import std.conv : to;
 import std.stdio;
+import dtk;
 
-/// Helper to extract the Tcl interpreter error string.
-string tclError(Tcl_Interp* interp)
+void main(string[] args)
 {
-    auto result = Tcl_GetStringResult(interp);
-    return result ? result.to!string : "(no error message)";
-}
+    writeln("--- Phase 1: TkApp & Low-Level Tcl/Tk Binding Test ---");
 
-enum tclLibPath = `C:\Users\Doug\AppData\Local\Apps\Tcl86\lib`;
+    auto app = new TkApp();
+    scope(exit) app.dispose();
 
-void main()
-{
-    auto interp = Tcl_CreateInterp();
+    auto root = app.root();
 
-    // Tell Tcl/Tk where to find their init scripts.
-    Tcl_Eval(interp, `set tcl_library {` ~ tclLibPath ~ `/tcl8.6}`);
-    Tcl_Eval(interp, `set tk_library {`  ~ tclLibPath ~ `/tk8.6}`);
+    // 1. Check root path and interp handle
+    assert(root.path == ".");
+    assert(root.interp !is null);
+    writeln("[PASS] Root representation and interpreter handle initialized.");
 
-    if (Tcl_Init(interp) != TCL_OK)
-        throw new Exception("Tcl_Init failed: " ~ tclError(interp));
+    // 2. Test title getter & setter
+    root.title = "D + Tk Phase 1 Test";
+    string currentTitle = root.title;
+    assert(currentTitle == "D + Tk Phase 1 Test", "Title mismatch: " ~ currentTitle);
+    writeln("[PASS] Root window title set and retrieved: '", currentTitle, "'");
 
-    if (Tk_Init(interp) != TCL_OK)
-        throw new Exception("Tk_Init failed: " ~ tclError(interp));
+    // 3. Test Tcl_Eval math expression
+    string mathResult = app.eval("expr 21 * 2");
+    assert(mathResult == "42", "Eval result mismatch: " ~ mathResult);
+    writeln("[PASS] Tcl_Eval expression evaluated: 21 * 2 = ", mathResult);
 
-    Tcl_Eval(interp,
-        "wm title . {D + Tk}\n" ~
-        "button .b -text {Hello from D} -command {puts {Button clicked!}}\n" ~
-        "pack .b -padx 30 -pady 30"
-    );
+    // 4. Test error handling (TclException on syntax or runtime error)
+    bool caughtException = false;
+    try
+    {
+        app.eval("nonexistent_command_12345");
+    }
+    catch (TclException ex)
+    {
+        caughtException = true;
+        writeln("[PASS] Caught expected TclException: ", ex.msg);
+    }
+    assert(caughtException, "Expected TclException was not thrown!");
 
-    Tcl_Eval(interp, "tkwait window .");
+    // 5. Create a button using Tcl script
+    app.eval("button .b -text {Hello from D TkApp!} -command {puts {Phase 1 Button Clicked!}}");
+    app.eval("pack .b -padx 40 -pady 40");
+    writeln("[PASS] Widget created and packed via Tcl commands.");
 
-    Tcl_DeleteInterp(interp);
+    bool interactive = (args.length > 1 && args[1] == "--interactive");
+    if (!interactive)
+    {
+        // Auto-close after 500ms for automated runs
+        app.eval("after 500 {destroy .}");
+        writeln("Running Tk event loop for 500ms (automated test)...");
+    }
+    else
+    {
+        writeln("Running Tk event loop. Close the window to exit.");
+    }
+
+    app.run();
+    writeln("[PASS] Tk event loop exited cleanly.");
+    writeln("--- Phase 1 All Tests Passed Successfully ---");
 }

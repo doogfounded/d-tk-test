@@ -3,12 +3,14 @@
 	"authors": [
 		"Doug"
 	],
-	"description": "tk d app ",
+	"description": "tk d app",
 	"copyright": "Copyright © 2026, Doug",
 	"license": "proprietary",
 	"targetType": "executable",
+	"sourcePaths": [
+		"source"
+	],
 	"sourceFiles": [
-		"source/app.d",
 		"source/tcl.c"
 	],
 	"cImportPaths": [
