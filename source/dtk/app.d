@@ -6,7 +6,8 @@ import dtk.callback;
 import dtk.root;
 import std.string : toStringz;
 import std.process : environment;
-import std.file : exists;
+import std.file : exists, isDir;
+import std.path : buildPath;
 
 /// Manages the Tcl/Tk interpreter lifecycle, callback registry, and event loop.
 class TkApp
@@ -17,7 +18,39 @@ private:
     TkRoot _root;
     bool _isDisposed = false;
 
-    enum defaultTclLibPath = `C:\Users\Doug\AppData\Local\Apps\Tcl86\lib`;
+    enum defaultTclLibBase = `C:\Users\Doug\AppData\Local\Apps\Tcl86\lib`;
+
+    /// Finds a valid Tcl script directory containing init.tcl
+    static string findTclLibrary()
+    {
+        // 1. Check known default Magicsplat path first
+        string defaultPath = buildPath(defaultTclLibBase, "tcl8.6");
+        if (exists(buildPath(defaultPath, "init.tcl")))
+            return defaultPath;
+
+        // 2. Check TCL_LIBRARY environment variable if valid
+        string envPath = environment.get("TCL_LIBRARY", "");
+        if (envPath.length > 0 && exists(buildPath(envPath, "init.tcl")))
+            return envPath;
+
+        return defaultPath;
+    }
+
+    /// Finds a valid Tk script directory containing tk.tcl
+    static string findTkLibrary()
+    {
+        // 1. Check known default Magicsplat path first
+        string defaultPath = buildPath(defaultTclLibBase, "tk8.6");
+        if (exists(buildPath(defaultPath, "tk.tcl")))
+            return defaultPath;
+
+        // 2. Check TK_LIBRARY environment variable if valid
+        string envPath = environment.get("TK_LIBRARY", "");
+        if (envPath.length > 0 && exists(buildPath(envPath, "tk.tcl")))
+            return envPath;
+
+        return defaultPath;
+    }
 
     void initInterp()
     {
@@ -25,9 +58,9 @@ private:
         if (!_interp)
             throw new TclException("Failed to create Tcl interpreter");
 
-        // Set up Tcl and Tk library script paths if not set in environment
-        string tclLib = environment.get("TCL_LIBRARY", defaultTclLibPath ~ `\tcl8.6`);
-        string tkLib = environment.get("TK_LIBRARY", defaultTclLibPath ~ `\tk8.6`);
+        // Validate and set tcl_library and tk_library to valid paths
+        string tclLib = findTclLibrary();
+        string tkLib = findTkLibrary();
 
         if (exists(tclLib))
         {
