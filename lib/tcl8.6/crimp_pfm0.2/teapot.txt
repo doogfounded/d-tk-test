@@ -1,0 +1,30 @@
+Package crimp::pfm 0.2
+Meta platform win32-x86_64
+Meta build::date 2025-01-03
+Meta generated::by {critcl 3.3.1} ashok
+Meta generated::date critcl
+Meta license Under a BSD license.
+Meta author {Andreas Kupries}
+Meta summary Extension of the CRIMP core to handle import and export of
+Meta summary PFM images
+Meta description This package provides the CRIMP eco-system with the
+Meta description functionality to handle images stored as Portable
+Meta description FloatMap (PFM), an inofficial derivative of PGM storing
+Meta description floating point values instead of integers. It can read
+Meta description and write both plain and raw formats. The latter may
+Meta description actually not be portable, due to differences in the
+Meta description binary representation of floating point numbers.
+Meta subject image {PFM image} {Portable FloatMap} {PFM import}
+Meta subject {PFM export} image {image import} {image export}
+Meta require {crimp::core 0.2} {Tcl 8.5}
+Meta included tcl/policy_pfm_1.tcl critcl-rt.tcl
+Meta included win32-x86_64/crimp_pfm.dll
+Meta entrytclcommand {eval [list ::apply {dir {
+    source [file join $dir critcl-rt.tcl]
+    set path [file join $dir [::critcl::runtime::MapPlatform]]
+    set ext [info sharedlibextension]
+    set lib [file join $path "crimp_pfm$ext"]
+    load $lib Crimp_pfm
+    ::critcl::runtime::Fetch $dir policy_pfm_1.tcl
+    package provide crimp::pfm 0.2
+}} $dir]}

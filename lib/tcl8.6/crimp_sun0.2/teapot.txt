@@ -1,0 +1,26 @@
+Package crimp::sun 0.2
+Meta platform win32-x86_64
+Meta build::date 2025-01-03
+Meta generated::by {critcl 3.3.1} ashok
+Meta generated::date critcl
+Meta license Under a BSD license.
+Meta author {Andreas Kupries}
+Meta summary Extension of the CRIMP core to handle import and export of
+Meta summary SUN raster images
+Meta description This package provides the CRIMP eco-system with the
+Meta description functionality to handle images stored as SUN raster
+Meta description images.
+Meta subject image {SUN raster image} {SUN raster import}
+Meta subject {SUN raster export} image {image import} {image export} SUN
+Meta require {crimp::core 0.2} {Tcl 8.5}
+Meta included tcl/policy_sun_1.tcl critcl-rt.tcl
+Meta included win32-x86_64/crimp_sun.dll
+Meta entrytclcommand {eval [list ::apply {dir {
+    source [file join $dir critcl-rt.tcl]
+    set path [file join $dir [::critcl::runtime::MapPlatform]]
+    set ext [info sharedlibextension]
+    set lib [file join $path "crimp_sun$ext"]
+    load $lib Crimp_sun
+    ::critcl::runtime::Fetch $dir policy_sun_1.tcl
+    package provide crimp::sun 0.2
+}} $dir]}

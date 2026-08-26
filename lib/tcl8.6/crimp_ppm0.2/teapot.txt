@@ -1,0 +1,27 @@
+Package crimp::ppm 0.2
+Meta platform win32-x86_64
+Meta build::date 2025-01-03
+Meta generated::by {critcl 3.3.1} ashok
+Meta generated::date critcl
+Meta license Under a BSD license.
+Meta author {Andreas Kupries}
+Meta summary Extension of the CRIMP core to handle import and export of
+Meta summary PPM images
+Meta description This package provides the CRIMP eco-system with the
+Meta description functionality to handle images stored as Portable
+Meta description PixMap (PPM). It can read and write both plain and raw
+Meta description formats.
+Meta subject image {PPM image} {Portable PixMap} {PPM import}
+Meta subject {PPM export} image {image import} {image export}
+Meta require crimp {crimp::core 0.2} {Tcl 8.5}
+Meta included tcl/policy_ppm_1.tcl critcl-rt.tcl
+Meta included win32-x86_64/crimp_ppm.dll
+Meta entrytclcommand {eval [list ::apply {dir {
+    source [file join $dir critcl-rt.tcl]
+    set path [file join $dir [::critcl::runtime::MapPlatform]]
+    set ext [info sharedlibextension]
+    set lib [file join $path "crimp_ppm$ext"]
+    load $lib Crimp_ppm
+    ::critcl::runtime::Fetch $dir policy_ppm_1.tcl
+    package provide crimp::ppm 0.2
+}} $dir]}

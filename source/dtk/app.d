@@ -6,8 +6,8 @@ import dtk.callback;
 import dtk.root;
 import std.string : toStringz;
 import std.process : environment;
-import std.file : exists, isDir;
-import std.path : buildPath;
+import std.file : exists, thisExePath;
+import std.path : buildPath, dirName;
 
 /// Manages the Tcl/Tk interpreter lifecycle, callback registry, and event loop.
 class TkApp
@@ -18,38 +18,85 @@ private:
     TkRoot _root;
     bool _isDisposed = false;
 
-    enum defaultTclLibBase = `C:\Users\Doug\AppData\Local\Apps\Tcl86\lib`;
+    /// Returns candidate base directories to search for Tcl/Tk script libraries.
+    static string[] getCandidateLibraryBases()
+    {
+        string[] bases;
+
+        // 1. Executable-relative paths (for self-contained/portable application bundles)
+        try
+        {
+            string exeDir = dirName(thisExePath());
+            bases ~= buildPath(exeDir, "lib");
+            bases ~= buildPath(exeDir, "tcl");
+            bases ~= exeDir;
+        }
+        catch (Exception)
+        {
+            // If thisExePath fails, proceed with system paths
+        }
+
+        // 2. User AppData (e.g. Magicsplat standard install)
+        string localAppData = environment.get("LOCALAPPDATA", "");
+        if (localAppData.length > 0)
+        {
+            bases ~= buildPath(localAppData, `Apps\Tcl86\lib`);
+            bases ~= buildPath(localAppData, `Programs\Tcl\lib`);
+        }
+
+        // 3. Common Windows system-wide installation locations
+        bases ~= `C:\Tcl\lib`;
+        bases ~= `C:\Program Files\Tcl\lib`;
+        bases ~= `C:\Program Files\Tcl86\lib`;
+        bases ~= `C:\Program Files (x86)\Tcl\lib`;
+
+        return bases;
+    }
 
     /// Finds a valid Tcl script directory containing init.tcl
     static string findTclLibrary()
     {
-        // 1. Check known default Magicsplat path first
-        string defaultPath = buildPath(defaultTclLibBase, "tcl8.6");
-        if (exists(buildPath(defaultPath, "init.tcl")))
-            return defaultPath;
+        // 1. Check all candidate bases for tcl8.6 / tcl
+        foreach (base; getCandidateLibraryBases())
+        {
+            string p1 = buildPath(base, "tcl8.6");
+            if (exists(buildPath(p1, "init.tcl")))
+                return p1;
+
+            string p2 = buildPath(base, "tcl");
+            if (exists(buildPath(p2, "init.tcl")))
+                return p2;
+        }
 
         // 2. Check TCL_LIBRARY environment variable if valid
         string envPath = environment.get("TCL_LIBRARY", "");
         if (envPath.length > 0 && exists(buildPath(envPath, "init.tcl")))
             return envPath;
 
-        return defaultPath;
+        return "";
     }
 
     /// Finds a valid Tk script directory containing tk.tcl
     static string findTkLibrary()
     {
-        // 1. Check known default Magicsplat path first
-        string defaultPath = buildPath(defaultTclLibBase, "tk8.6");
-        if (exists(buildPath(defaultPath, "tk.tcl")))
-            return defaultPath;
+        // 1. Check all candidate bases for tk8.6 / tk
+        foreach (base; getCandidateLibraryBases())
+        {
+            string p1 = buildPath(base, "tk8.6");
+            if (exists(buildPath(p1, "tk.tcl")))
+                return p1;
+
+            string p2 = buildPath(base, "tk");
+            if (exists(buildPath(p2, "tk.tcl")))
+                return p2;
+        }
 
         // 2. Check TK_LIBRARY environment variable if valid
         string envPath = environment.get("TK_LIBRARY", "");
         if (envPath.length > 0 && exists(buildPath(envPath, "tk.tcl")))
             return envPath;
 
-        return defaultPath;
+        return "";
     }
 
     void initInterp()
@@ -62,11 +109,11 @@ private:
         string tclLib = findTclLibrary();
         string tkLib = findTkLibrary();
 
-        if (exists(tclLib))
+        if (tclLib.length > 0 && exists(tclLib))
         {
             Tcl_SetVar(_interp, "tcl_library".ptr, tclLib.toStringz, TCL_GLOBAL_ONLY);
         }
-        if (exists(tkLib))
+        if (tkLib.length > 0 && exists(tkLib))
         {
             Tcl_SetVar(_interp, "tk_library".ptr, tkLib.toStringz, TCL_GLOBAL_ONLY);
         }

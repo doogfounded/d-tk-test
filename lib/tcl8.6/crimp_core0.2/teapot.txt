@@ -1,0 +1,29 @@
+Package crimp::core 0.2
+Meta platform win32-x86_64
+Meta build::date 2025-01-03
+Meta generated::by {critcl 3.3.1} ashok
+Meta generated::date critcl
+Meta license Under a BSD license.
+Meta author {Andreas Kupries}
+Meta summary The core data structures of all CRIMP packages
+Meta description This package is the core shared/used by all other CRIMP
+Meta description packages. At the C-level it provides the core data
+Meta description structures, functions, and macros for images and image
+Meta description types. These are reflected in the Tcl level API as
+Meta description well, via the fundamental accessors and basic image
+Meta description conversion from and to Tcl data structures (nested
+Meta description lists).
+Meta subject image {image type} {image accessors} {image construction}
+Meta subject {data structures} {data type}
+Meta require {Tcl 8.5}
+Meta included tcl/policy_core_1.tcl critcl-rt.tcl
+Meta included win32-x86_64/crimp_core.dll
+Meta entrytclcommand {eval [list ::apply {dir {
+    source [file join $dir critcl-rt.tcl]
+    set path [file join $dir [::critcl::runtime::MapPlatform]]
+    set ext [info sharedlibextension]
+    set lib [file join $path "crimp_core$ext"]
+    load $lib Crimp_core
+    ::critcl::runtime::Fetch $dir policy_core_1.tcl
+    package provide crimp::core 0.2
+}} $dir]}

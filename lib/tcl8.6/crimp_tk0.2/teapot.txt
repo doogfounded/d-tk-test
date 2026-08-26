@@ -1,0 +1,30 @@
+Package crimp::tk 0.2
+Meta platform win32-x86_64
+Meta build::date 2025-01-03
+Meta generated::by {critcl 3.3.1} ashok
+Meta generated::date critcl
+Meta license Under a BSD license.
+Meta author {Andreas Kupries}
+Meta summary Extension of the CRIMP core to handle import and export of
+Meta summary Tk photos
+Meta description This package provides the CRIMP eco-system with the
+Meta description functionality to handle images stored in Tk photo
+Meta description images. This means that this package is dependent on
+Meta description Tk, and thus the presence of a windowing system, like
+Meta description X11, or Aqua.
+Meta subject image {Tk photo image} {Tk photo} {Tk photo import}
+Meta subject {Tk photo export} image {image import} {image export} photo
+Meta subject {photo import} {photo export}
+Meta require {crimp::core 0.2} Plotchart snit {Tcl 8.5} Tk
+Meta included tcl/policy_tk_1.tcl tcl/plot_2.tcl critcl-rt.tcl
+Meta included win32-x86_64/crimp_tk.dll
+Meta entrytclcommand {eval [list ::apply {dir {
+    source [file join $dir critcl-rt.tcl]
+    set path [file join $dir [::critcl::runtime::MapPlatform]]
+    set ext [info sharedlibextension]
+    set lib [file join $path "crimp_tk$ext"]
+    load $lib Crimp_tk
+    ::critcl::runtime::Fetch $dir policy_tk_1.tcl
+    ::critcl::runtime::Fetch $dir plot_2.tcl
+    package provide crimp::tk 0.2
+}} $dir]}

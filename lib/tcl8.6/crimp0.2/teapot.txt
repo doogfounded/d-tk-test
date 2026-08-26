@@ -1,0 +1,31 @@
+Package crimp 0.2
+Meta platform win32-x86_64
+Meta build::date 2025-01-03
+Meta build::require {critcl::util 1}
+Meta generated::by {critcl 3.3.1} ashok
+Meta generated::date critcl
+Meta license Under a BSD license.
+Meta author {Andreas Kupries}
+Meta summary Main CRIMP package containing all the image processing
+Meta summary goodies
+Meta description This package provides the CRIMP eco-system with all the
+Meta description image processing goodies. Note that this package does
+Meta description not contain image IO functionality. It indirectly
+Meta description provides only what it inherited from {"crimp::core".}
+Meta description For display of the images handled here use
+Meta description {"crimp::tk".} For reading and writing image files use
+Meta description the various other crimp packages, like {"crimp::ppm",}
+Meta description etc.
+Meta require {crimp::core 0.2} math::constants math::special {Tcl 8.5}
+Meta included tcl/r_strimj_1.tcl tcl/policy_2.tcl critcl-rt.tcl
+Meta included win32-x86_64/crimp.dll
+Meta entrytclcommand {eval [list ::apply {dir {
+    source [file join $dir critcl-rt.tcl]
+    set path [file join $dir [::critcl::runtime::MapPlatform]]
+    set ext [info sharedlibextension]
+    set lib [file join $path "crimp$ext"]
+    load $lib Crimp
+    ::critcl::runtime::Fetch $dir r_strimj_1.tcl
+    ::critcl::runtime::Fetch $dir policy_2.tcl
+    package provide crimp 0.2
+}} $dir]}
